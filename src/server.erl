@@ -1,6 +1,6 @@
 -module(server).
 
--export([start/0, stop/0, add_node/1, nodes_available/0, set_value/2, get_value/1, delete_value/1]).
+-export([start/0, stop/0, add_node/1, nodes/0, nodes_alive/0, set/2, get/1, delete/1]).
 
 start() ->
     Addr = node(),
@@ -23,26 +23,33 @@ add_node(Addr) ->
 
    ok.
 
-nodes_available() ->
+nodes() ->
    server ! { nodes, self() },
 
    receive
        { nodes, Nodes } -> Nodes
    end.
 
-set_value(Key, Value) ->
+nodes_alive() ->
+   server ! { nodes_alive, self() },
+
+   receive
+       { nodes_alive, Nodes } -> Nodes
+   end.
+
+set(Key, Value) ->
     server ! { set, Key, Value },
 
     ok.
 
-get_value(Key) ->
+get(Key) ->
     server ! { get, Key, self() },
 
     receive
         { get, Value } -> Value
     end.
 
-delete_value(Key) ->
+delete(Key) ->
     server ! { delete, Key },
 
     ok.
@@ -67,32 +74,57 @@ loop(Nodes) ->
 
             loop(NewNodes);
 
-        { 'DOWN', MonitorRef, _, { _, Addr }, Reason } ->
-            NewNodes = sets:filter(fun({ Addr1, Pid1 }) -> Addr1 =/= Addr end, Nodes),
+        { 'DOWN', _, _, { _, Addr }, _ } ->
+            NewNodes = sets:filter(fun({ Addr1, _ }) -> Addr1 =/= Addr end, Nodes),
 
             io:format("Node ~w went offline. Alive nodes: ~w~n", [Addr, sets:to_list(NewNodes)]),
 
             loop(NewNodes);
 
         { nodes, Pid } ->
-            Pid ! { nodes, Nodes },
+            Pid ! { nodes, sets:to_list(Nodes) },
+
+            loop(Nodes);
+
+        { nodes_alive, Pid } ->
+            AliveNodes = lists:filter(fun({ Addr1, _ }) -> net_adm:ping(Addr1) == pong end, sets:to_list(Nodes)),
+
+            Pid ! { nodes_alive, AliveNodes },
 
             loop(Nodes);
 
         { set, Key, Value } ->
-            lists:foreach(fun({ Addr, Pid }) -> Pid ! { set, Key, Value } end, sets:to_list(Nodes)),
+            AliveNodes = sets:filter(fun({ Addr1, _ }) -> net_adm:ping(Addr1) == pong end, Nodes),
 
-            loop(Nodes);
+            NoNodes = sets:is_empty(AliveNodes),
+
+            if
+                NoNodes -> loop(AliveNodes);
+
+                true -> lists:foreach(fun({ _, Pid }) -> Pid ! { set, Key, Value } end, sets:to_list(AliveNodes)), loop(AliveNodes)
+            end;
 
         { get, Key, Pid } ->
-            lists:foreach(fun({ Addr1, Pid1 }) -> Pid1 ! { get, Key, Pid } end, sets:to_list(Nodes)),
+            AliveNodes = sets:filter(fun({ Addr1, _ }) -> net_adm:ping(Addr1) == pong end, Nodes),
 
-            loop(Nodes);
+            NoNodes = sets:is_empty(AliveNodes),
+
+            if
+                NoNodes -> Pid ! { get, no_nodes }, loop(AliveNodes);
+
+                true -> lists:foreach(fun({ _, Pid1 }) -> Pid1 ! { get, Key, Pid } end, sets:to_list(AliveNodes)), loop(AliveNodes)
+            end;
 
         { delete, Key } ->
-            lists:foreach(fun({ Addr, Pid }) -> Pid ! { delete, Key } end, Nodes),
+            AliveNodes = sets:filter(fun({ Addr1, _ }) -> net_adm:ping(Addr1) == pong end, Nodes),
 
-            loop(Nodes)
+            NoNodes = sets:is_empty(AliveNodes),
+
+            if
+                NoNodes -> loop(AliveNodes);
+
+                true -> lists:foreach(fun({ _, Pid }) -> Pid ! { delete, Key } end, sets:to_list(AliveNodes)), loop(AliveNodes)
+            end
 
     end,
 

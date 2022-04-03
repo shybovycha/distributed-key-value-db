@@ -13,7 +13,9 @@ loop(Data) ->
             loop(NewData);
 
         { get, Key, Pid } ->
-            Pid ! { get, maps:get(Key, Data, none) },
+            Value = maps:get(Key, Data, none),
+
+            Pid ! { get, Value },
 
             loop(Data);
 

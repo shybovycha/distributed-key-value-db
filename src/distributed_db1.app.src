@@ -1,11 +1,12 @@
 {application, distributed_db1,
- [{description, "An OTP application"},
+ [{description, "Distrubuted key-value data store"},
   {vsn, "0.1.0"},
   {registered, []},
   {mod, {distributed_db1_app, []}},
   {applications,
    [kernel,
-    stdlib
+    stdlib,
+    mochiweb
    ]},
   {env,[]},
   {modules, []},

@@ -1,6 +1,6 @@
--module(server).
+-module(db_supervisor).
 
--export([start/0, stop/0, add_node/1, nodes/0, nodes_alive/0, set/2, get/1, delete/1]).
+-export([start/0, stop/0, add_node/1, nodes/0, nodes_alive/0, set/2, get/1, delete/1, loop/0]).
 
 start() ->
     Addr = node(),
@@ -79,7 +79,7 @@ loop(Nodes) ->
                     end
             end,
 
-            Pid = spawn(Addr, client, loop, [Data]),
+            Pid = spawn(Addr, db_worker, loop, [Data]),
 
             monitor(process, Pid),
 

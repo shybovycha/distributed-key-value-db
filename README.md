@@ -19,6 +19,27 @@ Supports simple operations:
 
 ## Use
 
+### HTTP API
+
+Start the HTTP API with
+
+```bash
+    $ erl -pa _build/default/lib/distributed_db1/ebin -pa _build/default/lib/mochiweb/ebin -sname supervisor
+```
+
+Followed by
+
+```erl
+http_server:start().
+```
+
+This starts a simple HTTP server on port `4000` with the following API:
+
+* `PUT /?key=<key>` - assign the key provided as the `key` query param with the value provided in the request body
+* `GET /?key=<key>` - get the value assigned to key provided as the `key` query param
+* `DELETE /?key=<key>` - delete all values assigned to key provided as the `key` query param
+* `POST /add_node?addr=<addr>` - register the worker node with the address provided as the `addr` query param
+
 ### Supervisor
 
 Start supervisor node with
@@ -33,27 +54,27 @@ must keep using them across the cluster, so only use either short names or long 
 Then, start the supervisor program
 
 ```erl
-server:start().
+supervisor:start().
 ```
 
 This should yield the server address - keep a note of it - you'll need it to register worker nodes:
 
 ```
-(supervisor@machine)1> server:start().
+(supervisor@machine)1> supervisor:start().
 Started server at supervisor@machine
 ok
 ```
 
-Register worker node with `server:add_node/1`:
+Register worker node with `supervisor:add_node/1`:
 
 ```erl
-server:add_node(subnod1@machine).
+supervisor:add_node(subnod1@machine).
 ```
 
 This will register a node with the address passed to the function as its only argument and will start the worker program on the node machine:
 
 ```
-(supervisor@machine)2> server:add_node(subnode1@machine).
+(supervisor@machine)2> supervisor:add_node(subnode1@machine).
 ok
 Node subnode1@machine became online. Monitored nodes: [{subnode1@machine,<8974.89.0>}]
 ```
@@ -63,11 +84,11 @@ the data integrity is preserved.
 
 ### Issuing commands
 
-Use `server:set/2`, `server:get/1` and `server:delete/1` to manipulate the data.
+Use `supervisor:set/2`, `supervisor:get/1` and `supervisor:delete/1` to manipulate the data.
 
-#### `server:set/2`
+#### `supervisor:set/2`
 
-Syntax: `server:set(<key>, <value>).`
+Syntax: `supervisor:set(<key>, <value>).`
 
 Params:
 
@@ -79,9 +100,9 @@ Description:
 Assigns the value to the key on all the nodes in the cluster.
 Overrides the value if it already exists.
 
-#### `server:get/1`
+#### `supervisor:get/1`
 
-Syntax: `server:get(<key>).`
+Syntax: `supervisor:get(<key>).`
 
 Params:
 
@@ -91,9 +112,9 @@ Description:
 
 Reads the value assined to `<key>` on the first node available in the cluster.
 
-#### `server:delete/1`
+#### `supervisor:delete/1`
 
-Syntax: `server:delete(<key>).`
+Syntax: `supervisor:delete(<key>).`
 
 Params:
 

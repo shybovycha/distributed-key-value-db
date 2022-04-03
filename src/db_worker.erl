@@ -1,4 +1,4 @@
--module(client).
+-module(db_worker).
 
 -export([loop/1]).
 

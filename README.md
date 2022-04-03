@@ -58,6 +58,9 @@ ok
 Node subnode1@machine became online. Monitored nodes: [{subnode1@machine,<8974.89.0>}]
 ```
 
+More importantly, the supervisor will take the data snapshot from the first alive node and will start the new node with that snapshot, so
+the data integrity is preserved.
+
 ### Issuing commands
 
 Use `server:set/2`, `server:get/1` and `server:delete/1` to manipulate the data.

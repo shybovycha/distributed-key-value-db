@@ -62,12 +62,27 @@ loop(Nodes) ->
         stop -> exit(normal);
 
         { add_node, Addr } ->
-            % TODO: take the data from any alive node ! get_all
-            Pid = spawn(Addr, client, loop, [maps:new()]),
+            AliveNodes = sets:filter(fun({ Addr1, _ }) -> net_adm:ping(Addr1) == pong end, Nodes),
+
+            NoNodes = sets:is_empty(AliveNodes),
+
+            Data = if
+                NoNodes -> maps:new();
+
+                true ->
+                    [{ _, FirstNodePid }|_] = sets:to_list(AliveNodes),
+
+                    FirstNodePid ! { get_all, self() },
+
+                    receive
+                        { get_all, NewData } -> NewData
+                    end
+            end,
+
+            Pid = spawn(Addr, client, loop, [Data]),
 
             monitor(process, Pid),
 
-            % TODO: replace Addr with a struct #{ Addr, Pid }
             NewNodes = sets:add_element({ Addr, Pid }, Nodes),
 
             io:format("Node ~w became online. Monitored nodes: ~w~n", [Addr, sets:to_list(NewNodes)]),
@@ -112,7 +127,12 @@ loop(Nodes) ->
             if
                 NoNodes -> Pid ! { get, no_nodes }, loop(AliveNodes);
 
-                true -> lists:foreach(fun({ _, Pid1 }) -> Pid1 ! { get, Key, Pid } end, sets:to_list(AliveNodes)), loop(AliveNodes)
+                true ->
+                    [{ _, FirstNodeAlivePid }|_] = sets:to_list(AliveNodes),
+
+                    FirstNodeAlivePid ! { get, Key, Pid },
+
+                    loop(AliveNodes)
             end;
 
         { delete, Key } ->

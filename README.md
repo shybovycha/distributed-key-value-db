@@ -15,7 +15,9 @@ Supports simple operations:
 
 ## Build
 
-    $ rebar3 compile
+```bash
+$ rebar3 compile
+```
 
 ## Use
 

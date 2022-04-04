@@ -5,9 +5,9 @@
 -export([start/2, stop/1]).
 
 start(_StartType, _StartArgs) ->
-    http_server:start(),
+    % ok = http_server:start(),
 
-    distributed_db1_sup:start().
+    distributed_db1_sup:start_link().
 
 stop(_State) ->
     ok.

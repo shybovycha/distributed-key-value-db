@@ -24,13 +24,19 @@ Supports simple operations:
 Start the HTTP API with
 
 ```bash
-    $ erl -pa _build/default/lib/distributed_db1/ebin -pa _build/default/lib/mochiweb/ebin -sname supervisor
+    $ rebar3 shell --sname supervisor
 ```
 
 Followed by
 
 ```erl
 http_server:start().
+```
+
+Alternatively, for startup one can use raw `erl`:
+
+```bash
+    $ erl -pa _build/default/lib/distributed_db1/ebin -pa _build/default/lib/mochiweb/ebin -sname supervisor
 ```
 
 This starts a simple HTTP server on port `4000` with the following API:
@@ -44,7 +50,9 @@ This starts a simple HTTP server on port `4000` with the following API:
 
 Start supervisor node with
 
-    $ erl -pa _build/default/lib/distributed_db1/ebin -sname supervisor
+```bash
+    $ rebar3 shell --sname supervisor
+```
 
 This registers a node in a cluster with short name `supervisor`.
 

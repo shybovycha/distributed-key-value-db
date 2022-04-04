@@ -29,7 +29,7 @@ Start the HTTP API with
 
 Followed by
 
-```erl
+```erlang
 http_server:start().
 ```
 
@@ -61,7 +61,7 @@ must keep using them across the cluster, so only use either short names or long 
 
 Then, start the supervisor program
 
-```erl
+```erlang
 supervisor:start().
 ```
 
@@ -75,7 +75,7 @@ ok
 
 Register worker node with `supervisor:add_node/1`:
 
-```erl
+```erlang
 supervisor:add_node(subnod1@machine).
 ```
 

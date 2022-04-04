@@ -25,9 +25,12 @@ loop(Data) ->
             loop(NewData);
 
         { get_all, Pid } ->
-            Pid ! { get_all, Data },
+            Pid ! { got_all, Data },
 
-            loop(Data)
+            loop(Data);
+
+        { got_all, NewData } ->
+            loop(NewData)
 
 	end.
 
